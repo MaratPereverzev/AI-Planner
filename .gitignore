@@ -1,2 +1,6 @@
 .env
 .idea
+
+config/__pycache__/*
+**/__pycache__/*
+*.pyc
