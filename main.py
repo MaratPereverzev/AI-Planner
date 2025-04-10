@@ -9,6 +9,8 @@ from typing import Dict, Any, Awaitable
 from config.globals import config
 import asyncio
 
+from repository.task import TaskRepository
+
 allowed_users = [686364607]
 
 default = DefaultBotProperties(parse_mode="Markdown")
@@ -33,6 +35,13 @@ async def send_welcome(message: types.Message):
 @dp.message(Command('id'))
 async def send_welcome(message: types.Message):
     await message.answer(f"`{message.from_user.id}`")
+
+@dp.message(Command('today_todos'))
+async def send_todos(message: types.Message):
+    result = TaskRepository().get_all()
+
+    todos = result.__str__() if len(result) > 0 else "Пока что Вы не создали ни одной Тудудушки :("
+    await message.answer(text=todos)
 
 async def main():
     await dp.start_polling(bot)
