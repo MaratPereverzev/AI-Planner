@@ -8,6 +8,8 @@ class Config(BaseSettings):
     DB_HOST: str
     DB_PORT: str
     TELEGRAM_TOKEN: str
+    OPENAI_TOKEN: str
+    MY_TELEGRAM_ID: int
 
     @property
     def sync_db_url(self):

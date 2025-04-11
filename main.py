@@ -1,21 +1,19 @@
-from typing import Callable, Awaitable
-
-from aiogram import Bot, Dispatcher, types
-from aiogram.client.default import DefaultBotProperties
-from aiogram.filters import CommandStart, Command
-from telebot.types import Update
-from typing import Dict, Any, Awaitable
-
-from config.globals import config
 import asyncio
+from telebot.types import Update
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import CommandStart, Command
+from typing import Callable, Dict, Any, Awaitable
+from aiogram.client.default import DefaultBotProperties
 
-from repository.task import TaskRepository
-
-allowed_users = [686364607]
+from config.db import sync_engine
+from config.globals import config
+from service.todo import TodoService
 
 default = DefaultBotProperties(parse_mode="Markdown")
 bot = Bot(token=config.TELEGRAM_TOKEN, default=default)
 dp = Dispatcher()
+
+todoService = TodoService()
 
 @dp.message.middleware()
 async def database_transaction_middleware(
@@ -23,7 +21,8 @@ async def database_transaction_middleware(
     event: Update,
     data: Dict[str, Any]
 ) -> Any:
-    if data["event_from_user"].id not in allowed_users:
+
+    if data["event_from_user"].id != config.MY_TELEGRAM_ID:
         await bot.send_message(chat_id=data["event_chat"].id, text="⛔ You are not allowed to use this bot")
         return
     await handler(event, data)
@@ -37,11 +36,15 @@ async def send_welcome(message: types.Message):
     await message.answer(f"`{message.from_user.id}`")
 
 @dp.message(Command('today_todos'))
-async def send_todos(message: types.Message):
-    result = TaskRepository().get_all()
+async def send_today_todos(message: types.Message):
+    result = todoService.get_today()
+    await message.answer(text=result)
 
-    todos = result.__str__() if len(result) > 0 else "Пока что Вы не создали ни одной Тудудушки :("
-    await message.answer(text=todos)
+@dp.message()
+async def post_todo(message: types.Message):
+    result = todoService.add(message.text)
+
+    await message.answer(result)
 
 async def main():
     await dp.start_polling(bot)
